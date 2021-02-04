@@ -12,6 +12,31 @@
                 {
                     "name": "TomatoCube branch of CH55xDuino MCS51 plain C core (non-C++)",
                     "architecture": "mcs51",
+                    "version": "0.1.0",
+                    "category": "Contributed",
+                    "boards": [
+                        {"name": "TomatoCube CH552 Board"}
+                    ],
+                    "toolsDependencies": [
+                        {
+                            "name": "MCS51Tools",
+                            "version": "2020.12.01",
+                            "packager": "TomatoCubeCH552"
+                        },
+                        {
+                            "name": "sdcc",
+                            "version": "build.11630",
+                            "packager": "TomatoCubeCH552"
+                        }
+                    ],
+                    "url": "https://github.com/TomatoCube18/ch55xduino/releases/download/0.1.0_TC/ch55xduino_tc-core-0.1.0.tar.bz2",
+                    "archiveFileName": "ch55xduino_tc-core-0.1.0.tar.bz2",
+                    "checksum": "SHA-256:2b4f680651ed5a525f3d6e46c0f9960a7e467a6ce84394743d15103af10f31cb",
+                    "size": "102789"
+                },
+                {
+                    "name": "TomatoCube branch of CH55xDuino MCS51 plain C core (non-C++)",
+                    "architecture": "mcs51",
                     "version": "0.0.9",
                     "category": "Contributed",
                     "boards": [
