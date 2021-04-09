@@ -24,7 +24,7 @@ Start the Arduino-IDE. In *File->Preferences*, *Settings* tab, enter
 as an *Additional Boards Manager URL*.
 
 * Open *Tools->Board:...->Boards Manager*
-* Find Ch55xduino by typing 'ch' into the search line
+* Find Ch55xduino by typing 'tomato' into the search line
 * Click on the list entry
 * Click on *Install*.
 
