@@ -29,7 +29,7 @@
                             "packager": "TomatoCubeCH552"
                         }
                     ],
-                    "url": "https://github.com/TomatoCube18/ch55xduino/releases/download/0.1.2_TC/ch55xduino_tc-core-0.1.3.tar.bz2",
+                    "url": "https://github.com/TomatoCube18/ch55xduino/releases/download/0.1.3_TC/ch55xduino_tc-core-0.1.3.tar.bz2",
                     "archiveFileName": "ch55xduino_tc-core-0.1.3.tar.bz2",
                     "checksum": "SHA-256:a9be27be30686d053df042a1a1a849d5a6665dfc41a60d70ac58052fb80c0ae9",
                     "size": "104454"
