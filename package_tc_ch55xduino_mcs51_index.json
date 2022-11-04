@@ -12,6 +12,34 @@
                 {
                     "name": "TomatoCube branch of CH55xDuino MCS51 plain C core (non-C++)",
                     "architecture": "mcs51",
+                    "version": "0.1.5",
+                    "category": "Contributed",
+                    "boards": [
+                        {"name": "CH552 Board"},
+                        {"name": "CH551 Board"},
+                        {"name": "CH559 Board"},
+                        {"name": "CH549 (experimental)"}
+                    ],
+                    "toolsDependencies": [
+                        {
+                            "name": "MCS51Tools",
+                            "version": "2022.10.08",
+                            "packager": "TomatoCubeCH552"
+                        },
+                        {
+                            "name": "sdcc",
+                            "version": "build.13407",
+                            "packager": "TomatoCubeCH552"
+                        }
+                    ],
+                    "url": "https://github.com/TomatoCube18/ch55xduino/releases/download/0.1.5_TC/ch55xduino_tc-core-0.1.5.tar.bz2",
+                    "archiveFileName": "ch55xduino_tc-core-0.1.5.tar.bz2",
+                    "checksum": "SHA-256:50ac8299364cb4201bf73c28b940331266c17ab9ad9886efddfb1741c59f6489",
+                    "size": "163296"
+                },
+                {
+                    "name": "TomatoCube branch of CH55xDuino MCS51 plain C core (non-C++)",
+                    "architecture": "mcs51",
                     "version": "0.1.4",
                     "category": "Contributed",
                     "boards": [
@@ -213,6 +241,31 @@
             "tools" : [
                 {
                     "name": "MCS51Tools",
+                    "version": "2022.10.08",
+                    "systems": [
+                        {
+                            "host": "x86_64-pc-linux-gnu",
+                            "url": "https://github.com/TomatoCube18/ch55xduino/releases/download/0.1.5_TC/ch55xduino-tools_linux64-2022.10.08.tar.bz2",
+                            "archiveFileName": "ch55xduino-tools_linux64-2022.10.08.tar.bz2",
+                            "checksum": "SHA-256:a944c46d267e1a07cc22c04f898d57cb565917f9ff81f2debc68097be86e9925",
+                            "size": "18616"
+                        },{
+                            "host": "x86_64-apple-darwin",
+                            "url": "https://github.com/TomatoCube18/ch55xduino/releases/download/0.1.5_TC/ch55xduino-tools_macosx-2022.10.08.tar.bz2",
+                            "archiveFileName": "ch55xduino-tools_macosx-2022.10.08.tar.bz2",
+                            "checksum": "SHA-256:83e425d4e69354cb4d4b08204b001dd345d57cb205f29fdbe2d2df78da8eb463",
+                            "size": "52407"
+                        },{
+                            "host": "i686-mingw32",
+                            "url": "https://github.com/TomatoCube18/ch55xduino/releases/download/0.1.5_TC/ch55xduino-tools_mingw32-2022.10.08.tar.bz2",
+                            "archiveFileName": "ch55xduino-tools_mingw32-2022.10.08.tar.bz2",
+                            "checksum": "SHA-256:eaa1baff3d37932e45431a16ddf6706bcc0acf3dda36767b2575ceeece767cdc",
+                            "size": "718565"
+                        }
+                    ]
+                },
+                {
+                    "name": "MCS51Tools",
                     "version": "2020.12.01",
                     "systems": [
                         {
@@ -233,6 +286,31 @@
                             "archiveFileName": "ch55xduino-tools_linux-2020.12.01.tar.bz2",
                             "checksum": "SHA-256:d74606b8c22fa3764e100a6340b8c5e96062616ec2e26c20e189fd667598a8b7",
                             "size": "16954"
+                        }
+                    ]
+                },
+                {
+                    "name": "sdcc",
+                    "version": "build.13407",
+                    "systems": [
+                        {
+                            "host": "x86_64-pc-linux-gnu",
+                            "url": "https://github.com/TomatoCube18/ch55xduino/releases/download/0.1.5_TC/sdcc-mcs51-amd64-ubuntu20.04-linux2.5-20220422-13407.tar.bz2",
+                            "archiveFileName": "sdcc-mcs51-amd64-ubuntu20.04-linux2.5-20220422-13407.tar.bz2",
+                            "checksum": "SHA-256:e2b5947b962a185e1ad87e9b71c230517b013a3ccebc214e3f2160ae9819931a",
+                            "size": "3685666"
+                        },{
+                            "host": "i686-mingw32",
+                            "url": "https://github.com/TomatoCube18/ch55xduino/releases/download/0.1.5_TC/sdcc-mcs51-i586-mingw32msvc-20220422-13407.tar.bz2",
+                            "archiveFileName": "sdcc-mcs51-i586-mingw32msvc-20220422-13407.tar.bz2",
+                            "checksum": "SHA-256:ee557b269e8256a59f39b428b0597525a09b4a7b80f28481e19f3fc8bac6a4f5",
+                            "size": "2073934"
+                        },{
+                            "host": "x86_64-apple-darwin",
+                            "url": "https://github.com/TomatoCube18/ch55xduino/releases/download/0.1.5_TC/sdcc-mcs51-x86_64-apple-macosx-20220422-13407.tar.bz2",
+                            "archiveFileName": "sdcc-mcs51-x86_64-apple-macosx-20220422-13407.tar.bz2",
+                            "checksum": "SHA-256:db955202ace81373e07f096c8eb9c60216888a9767492f3aeb99d7f53a5f01de",
+                            "size": "2218723"
                         }
                     ]
                 },
