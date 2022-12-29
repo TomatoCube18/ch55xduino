@@ -1,8 +1,8 @@
 #include "TomatoCubeWorker.h"
-// Add on startup game only
-// Jingle Bells
+
 
 const PROGMEM char Jingle_melody[] = {
+  // Jingle Bells
   NOTE_E5, 8, NOTE_E5, 8, NOTE_E5, 4,
   NOTE_E5, 8, NOTE_E5, 8, NOTE_E5,  4,
   NOTE_E5, 8, NOTE_G5, 8,  NOTE_C5, 8,  NOTE_D5, 8, 
@@ -14,8 +14,7 @@ const PROGMEM char Jingle_melody[] = {
 };
 
 const PROGMEM char pacman_melody[] = {
-
-   // Pacman
+  // Pacman
   // Score available at https://musescore.com/user/85429/scores/107109
   NOTE_B4, 16, NOTE_B5, 16, NOTE_FS5, 16, NOTE_DS5, 16, //1
   NOTE_B5, 32, NOTE_FS5, -16, NOTE_DS5, 8, NOTE_C5, 16,
@@ -24,13 +23,11 @@ const PROGMEM char pacman_melody[] = {
   NOTE_B4, 16,  NOTE_B5, 16,  NOTE_FS5, 16,   NOTE_DS5, 16,  NOTE_B5, 32,  //2
   NOTE_FS5, -16, NOTE_DS5, 8,  NOTE_DS5, 32, NOTE_E5, 32,  NOTE_F5, 32,
   NOTE_F5, 32,  NOTE_FS5, 32,  NOTE_G5, 32,  NOTE_G5, 32, NOTE_GS5, 32,  NOTE_A5, 16, NOTE_B5, 8
-  
 };
 
 const PROGMEM char tetris_melody[] = {
-
-  //Based on the arrangement at https://www.flutetunes.com/tunes.php?id=192
-  
+  // Tetris
+  //Based on the arrangement at https://www.flutetunes.com/tunes.php?id=192 
   NOTE_E5, 4,  NOTE_B4,8,  NOTE_C5,8,  NOTE_D5,4,  NOTE_C5,8,  NOTE_B4,8,
   NOTE_A4, 4,  NOTE_A4,8,  NOTE_C5,8,  NOTE_E5,4,  NOTE_D5,8,  NOTE_C5,8,
   NOTE_B4, -4,  NOTE_C5,8,  NOTE_D5,4,  NOTE_E5,4,
@@ -59,15 +56,12 @@ const PROGMEM char tetris_melody[] = {
   NOTE_E5,2,   NOTE_C5,2,
   NOTE_D5,2,   NOTE_B4,2,
   NOTE_C5,4,   NOTE_E5,4,  NOTE_A5,2,
-  NOTE_GS5,2,
-
+  NOTE_GS5,2
 };
 
 const PROGMEM char christmas_melody[] = {
-
   // We Wish You a Merry Christmas
   // Score available at https://musescore.com/user/6208766/scores/1497501
-  
   NOTE_C5,4, //1
   NOTE_F5,4, NOTE_F5,8, NOTE_G5,8, NOTE_F5,8, NOTE_E5,8,
   NOTE_D5,4, NOTE_D5,4, NOTE_D5,4,
@@ -137,6 +131,7 @@ unsigned char leftTotal = 0;
 unsigned char rightTotal = 0;
 bool inGameMode = true;
 bool firstRunMusic = true;
+unsigned char firstRunTune = 0;
 
 unsigned long lastLEDMillis = 0;
 unsigned char LEDStatus = LOW;
@@ -186,12 +181,13 @@ void loop() {
 
     if (inGameMode) {
           scanTouchButton();
-           if (getTouchB1Transition()) {
+           if (getTouchB1Transition() == 1) {
               
                 leftTotal += 1;
                 if (leftTotal > 3) {
                     if (rightTotal == 3) {
                         inGameMode = false;
+                        firstRunTune = 0;
                         srand(millis());
                         setStarRGB(rand() % 0x0F, rand() % 0x0F, rand() % 0x0F);
                         playTone(TONE_PINOUT, NOTE_E5, 50) ;
@@ -204,11 +200,12 @@ void loop() {
                         leftTotal = 0;
                 }
            }
-           else  if (getTouchB2Transition()) {
+           else  if (getTouchB2Transition() == 1) {
                 rightTotal += 1;
                 if (rightTotal > 3) {
                     if (leftTotal == 3) {
                         inGameMode = false;
+                        firstRunTune = 1;
                         srand(millis());
                         setStarRGB(rand() % 0x0F, rand() % 0x0F, rand() % 0x0F);
                         playTone(TONE_PINOUT, NOTE_E5, 50) ;
@@ -227,13 +224,13 @@ void loop() {
     else {
           scanTouchButton();
           if (firstRunMusic) {
-              adjustTempo(300);
-              sendMusicNotes(Jingle_melody, sizeof(Jingle_melody));
+              adjustTempo(400);
+              sendMusicNotes(firstRunTune? christmas_melody: Jingle_melody, firstRunTune? sizeof(christmas_melody) : sizeof(Jingle_melody));
               generateLEDSequence();
               setStarRGB(rand() % 0x0F, rand() % 0x0F, rand() % 0x0F);
               firstRunMusic = false;
           }
-          else if (getTouchB1Transition()) {
+          else if (getTouchB1Transition() == 1) {
               adjustTempo(300);
               if (getTouchB2State())
                 sendMusicNotes(pacman_melody, sizeof(pacman_melody));
@@ -243,7 +240,7 @@ void loop() {
               setStarRGB(rand() % 0x0F, rand() % 0x0F, rand() % 0x0F);
               
           }
-          else if (getTouchB2Transition()) {
+          else if (getTouchB2Transition() == 1) {
               adjustTempo(400);
               if (getTouchB1State())
                 sendMusicNotes(tetris_melody, sizeof(tetris_melody));
