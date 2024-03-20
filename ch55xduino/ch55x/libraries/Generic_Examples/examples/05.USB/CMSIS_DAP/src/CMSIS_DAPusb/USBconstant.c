@@ -44,21 +44,21 @@ __code uint8_t CfgDesc[] ={
     0x22,       /* Descriptor type. */
     sizeof(ReportDesc) & 0xff,sizeof(ReportDesc) >> 8,    /* Total length of report descriptor. */
     
-    /* EP Descriptor: interrupt in. */
-    0x07,                       /* bLength */
-    0x05,                      /* bDescriptorType */
-    0x01,         /* bEndpointAddress */
-    0x03,                             /* bmAttributes */
-    0x40, 0x00,    /* wMaxPacketSize */
-    1,        /* bInterval */
+    // EP Descriptor: interrupt OUT.
+    0x07,                      // bLength
+    0x05,                      // bDescriptorType
+    0x01,                      // bEndpointAddress EP1 OUT
+    0x03,                      // bmAttributes
+    0x40, 0x00,                // wMaxPacketSize
+    1,                         // bInterval
     
-    /* EP Descriptor: interrupt out. */
-    0x07,                       /* bLength */
-    0x05,                      /* bDescriptorType */
-    0x81,       /* bEndpointAddress */
-    0x03,                             /* bmAttributes */
-    0x40, 0x00,    /* wMaxPacketSize */
-    1         /* bInterval */
+    // EP Descriptor: interrupt IN.
+    0x07,                      // bLength
+    0x05,                      // bDescriptorType
+    0x81,                      // bEndpointAddress EP1 IN
+    0x03,                      // bmAttributes
+    0x40, 0x00,                // wMaxPacketSize
+    1,                         // bInterval
     
     
 };
@@ -68,18 +68,22 @@ __code uint16_t ReportDescLen = sizeof(ReportDesc);
 
 __code uint8_t ReportDesc[] ={
     0x06, 0x00, 0xFF,   // Usage Page = 0xFF00 (Vendor Defined Page 1)
+    // USB-IF HID tool says vendor usage not required, but Win7 needs it
     0x09, 0x01,         // Usage (Vendor Usage 1)
     0xA1, 0x01,         // Collection (Application)
-    0x19, 0x01,         // Usage Minimum
-    0x29, 0x40,         // Usage Maximum //64 input usages total (0x01 to 0x40)
-    0x15, 0x00,         // Logical Minimum (data bytes in the report may have minimum value = 0x00)
-    0x26, 0xFF, 0x00,   // Logical Maximum (data bytes in the report may have maximum value = 0x00FF = unsigned 255)
-    0x75, 0x08,         // Report Size: 8-bit field size
-    0x95, 0x40,         // Report Count: Make sixty-four 8-bit fields (the next time the parser hits an "Input", "Output", or "Feature" item)
-    0x81, 0x00,         // Input (Data, Array, Abs): Instantiates input packet fields based on the above report size, count, logical min/max, and usage.
-    0x19, 0x01,         // Usage Minimum
-    0x29, 0x40,         // Usage Maximum //64 output usages total (0x01 to 0x40)
-    0x91, 0x00,         // Output (Data, Array, Abs): Instantiates output packet fields. Uses same report size and count as "Input" fields, since nothing new/different was specified to the parser since the "Input" item.
+    0x15, 0x00,         //  Logical minimum value 0
+    0x26, 0xFF, 0x00,   //  Logical maximum value 255
+    0x75, 0x08,         //  Report Size: 8-bit field size
+    0x95, 0x40,         //  Report Count: Make 64 fields
+    
+    // Input Report
+    0x09, 0x02,         //  Usage (Vendor Usage 2)
+    0x81, 0x02,         //  Input (Data,Var,Abs,No Wrap,Linear)
+    
+    // Output Report
+    0x09, 0x03,         //  Usage (Vendor Usage 3)
+    0x91, 0x02,         //  Output (Data,Var,Abs,No Wrap,Linear)
+    
     0xC0                // End Collection
 };
 
@@ -103,6 +107,6 @@ __code uint16_t Prod_DesLen = sizeof(Prod_Des);
 
 __code uint8_t Manuf_Des[]={
     0x0E,0x03,
-    'D',0x00,'e',0x00,'q',0x00,'i',0x00,'n',0x00,'g',0x00,
+    'T',0x00,'o',0x00,'m',0x00,'a',0x00,'t',0x00,'o',0x00,
 };
 __code uint16_t Manuf_DesLen = sizeof(Manuf_Des);

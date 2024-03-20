@@ -2,17 +2,17 @@
 
 __xdata uint8_t ledData[NUM_BYTES];
 
-uint8_t button1State = LOW;
-uint8_t button2State = LOW;
+__xdata uint8_t button1State = LOW;
+__xdata uint8_t button2State = LOW;
 
-uint8_t button1RFlag = LOW;
-uint8_t button2RFlag = LOW;
+__xdata uint8_t button1RFlag = LOW;
+__xdata uint8_t button2RFlag = LOW;
 
-uint8_t button1FFlag = LOW;
-uint8_t button2FFlag = LOW;
+__xdata uint8_t button1FFlag = LOW;
+__xdata uint8_t button2FFlag = LOW;
 
-uint8_t button1tmp = 0;
-uint8_t button2tmp = 0;
+__xdata uint8_t button1tmp = 0;
+__xdata uint8_t button2tmp = 0;
 
 
 // change this to make the song slower or faster
@@ -34,6 +34,8 @@ void initTomatoCube() {
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(TONE_PINOUT, OUTPUT);
+
+  digitalWrite(TONE_PINOUT, LOW);
 
   pinMode(RGB_PINOUT, OUTPUT);
   pinMode(LED_1_PINOUT, OUTPUT);
@@ -345,15 +347,15 @@ void playTone(int pinToneOut, unsigned char note, int duration) {
   else {
       int msDelay = 500000/(freqLookup(note));
       while ( (millis() - startMillis) < duration) {
-            digitalWrite(pinToneOut, HIGH);   // turn the LED on (HIGH is the voltage level)
+            digitalWrite(pinToneOut, HIGH);   // turn the SPK on (HIGH is the voltage level)
             delayMicroseconds(msDelay);                       // wait for a second
-            digitalWrite(pinToneOut, LOW);    // turn the LED off by making the voltage LOW
+            digitalWrite(pinToneOut, LOW);    // turn the SPK off by making the voltage LOW
             delayMicroseconds(msDelay);  
       }
   }
 }
 
-unsigned long startToneMillis;
+__xdata unsigned long startToneMillis;
 int toneMsDelay = 0;
 int noteDuration = 0;
 
@@ -393,12 +395,11 @@ int playMusic() {
    }
    else if (thisNote < sizeMusic) {
 //        int noteDuration = 0;
-        if (songNotes[(thisNote * 2) + 1] > 0) {
+        if (songNotes[(thisNote * 2) + 1] < 128) {
           // regular note, just proceed
           noteDuration = (getWholeNote()) / (songNotes[(thisNote * 2) + 1]);
-        } else if (songNotes[(thisNote * 2) + 1] < 0) {
-          // dotted notes are represented with negative durations!!
-          noteDuration = (getWholeNote()) / abs(songNotes[(thisNote * 2) + 1]);
+        } else {// if (songNotes[(thisNote * 2) + 1] < 0) {
+          noteDuration = (getWholeNote()) / ((songNotes[(thisNote * 2) + 1]) - 128);
           noteDuration *= 1.5; // increases the duration in half for dotted notes
         }
 
@@ -434,8 +435,8 @@ void scanTouchButton() {
         button1RFlag = (button1tmp & 0x3F) == 0x07;  // On Press or Rising flag
         button2RFlag = (button2tmp & 0x3F) == 0x07;
         
-        button1FFlag = (button1tmp & 0x3F) == 0x18;  // On Press or Rising flag
-        button2FFlag = (button2tmp & 0x3F) == 0x18;
+        button1FFlag = (button1tmp & 0x3F) == 0x38;  // On Press or Rising flag
+        button2FFlag = (button2tmp & 0x3F) == 0x38;
 }
 
 uint8_t getTouchB1State() {

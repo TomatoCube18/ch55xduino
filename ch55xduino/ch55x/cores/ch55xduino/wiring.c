@@ -1,3 +1,7 @@
+/*
+ created by Deqing Sun for use with CH55xduino
+ */
+
 #include "wiring_private.h"
 
 #ifndef USER_USB_RAM
@@ -8,6 +12,12 @@ void USBDeviceEndPointCfg();
 
 extern __idata volatile uint32_t timer0_overflow_count;
 extern __idata volatile uint8_t timer0_overflow_count_5th_byte;
+
+#if F_CPU == 56000000
+#define T0_CYCLE 224
+#else
+#define T0_CYCLE 250
+#endif
 
 void Timer0Interrupt(void) __interrupt (INT_NO_TMR0) __using(1) //using register bank 1
 {
@@ -59,7 +69,7 @@ uint32_t micros(){
              ";if (interruptOn) EA = 1;                    \n"
              "    mov _EA,c                                \n"
              
-             ";if ((TF0 in b) && (R4 != 255)){              \n"
+             ";if ((TF0 in b) && (R4 != 255)){             \n"
              "    jnb b.5,incTimer0_overf_cntCopyOver$     \n"
              "    mov a,#1     \n"
              "    add a,r4     \n"
@@ -76,18 +86,32 @@ uint32_t micros(){
              "incTimer0_overf_cntCopyOver$:                \n"
             );
     
+    //since TL0 (R4) always ranging from (256-T0_CYCLE) to 255, we can reduce R4 by (256-T0_CYCLE)
+    
+#if T0_CYCLE == 250
+    __asm__ ("    clr c                                    \n"
+             "    mov a, r4                                \n"
+             "    subb a,#6                                \n"
+             "    mov r4, a                                \n");
+#elif T0_CYCLE == 224
+    __asm__ ("    clr c                                    \n"
+             "    mov a, r4                                \n"
+             "    subb a,#32                               \n"
+             "    mov r4, a                                \n");
+#endif
+    
 #if F_CPU == 16000000
-    //1m = 250t 1t=0.75us (m*250+t-6)*3/2/2
+    //1m = 250t 1t=0.75us (m*250+t)*3/2/2
     //m in r0~r3
     //t in r4
-    //t=((3*t)>>1)-9);
+    //t=((3*t)>>1);
     //m=(m*375)=m<<8+m*119;
     //return (m+t)>>1
     
     
     __asm__ (
-             ";1m = 250t 1t=0.5us (m*250+t-6)*3/2/2  t is 6~255\n"
-             ";we need to return (m<<8+m*119+((3*t)>>1)-9))>>1 \n"
+             ";1m = 250t 1t=0.5us (m*250+t)*3/2/2  t is 0~249\n"
+             ";we need to return (m<<8+m*119+((3*t)>>1)))>>1 \n"
              
              ";m=m*119;                                    \n"
              "    mov a, r0                                \n"
@@ -136,16 +160,16 @@ uint32_t micros(){
              "    add a, r1                                \n"
              "    mov r1, a                                \n"
              "    mov a, r7                                \n"
-             "    addc a, r2                                \n"
+             "    addc a, r2                               \n"
              "    mov r2, a                                \n"
              "    pop a                                    \n"
-             "    addc a, r3                                \n"
+             "    addc a, r3                               \n"
              "    mov r3, a                                \n"
              "    pop a                                    \n"
-             "    addc a, r5                                \n"
+             "    addc a, r5                               \n"
              "    mov r5, a                                \n"
              
-             ";t=((3*t)>>1));                             \n"
+             ";t=((3*t)>>1));                              \n"
              
              "    mov b, #3                                \n"
              "    mov a, r4                                \n"
@@ -158,8 +182,6 @@ uint32_t micros(){
              "    mov a, r4                                \n"
              "    rrc a                                    \n"
              "    mov r4, a                                \n"
-             "    ;sub r4:r6 by 9                          \n"
-            // TODO: R4 may overflow, skip-9 for now (4.5us offset may not be an issue?)
              
              ";get m+t                                     \n"
              "    mov r7, #0                               \n"
@@ -200,12 +222,12 @@ uint32_t micros(){
              
              );
     //’dpl’ (LSB),’dph’,’b’ & ’acc’
-#else
+#elif F_CPU == 24000000
     //24M CLK
     
-     /*1m = 250t 1t=0.5us (m*250+t-6)/2
+     /*1m = 250t 1t=0.5us (m*250+t)/2
      
-     t=(t>>1)-3;
+     t=(t>>1);
      m=m*125;
      
      return ( m+t );*/
@@ -214,17 +236,13 @@ uint32_t micros(){
     
 
 __asm__ (
-             ";1m = 250t 1t=0.5us (m*250+t-6)/2  t is 6~255\n"
-             ";we need to return m*125+t-3                 \n"
-             ";t=(t>>1)-3;                                 \n"
+             ";1m = 250t 1t=0.5us (m*250+t)/2  t is 0~249  \n"
+             ";we need to return m*125+t/2                 \n"
+             ";t=(t>>1);                                   \n"
              "    mov a,r4                                 \n"
              "    clr c                                    \n"
              "    rrc a                                    \n"
              "    mov r4,a                                 \n"
-             //"    dec r4                                   \n"
-             //"    dec r4                                   \n"
-             //"    dec r4                                   \n"
-         // TODO: R4 may overflow, disable for now (3us offset may not be an issue?)
              
              ";m=m*125;                                    \n"
              "    mov b, #125                              \n"
@@ -272,6 +290,165 @@ __asm__ (
              "    addc a, r5                               \n"
              
              );
+#elif F_CPU == 56000000
+    //56M CLK
+    
+    /*1m = 224t 1t=0.21412us=3/14us (m*224+t)*3/14
+     m*48+t*3/14
+     //m in r0~r3
+     //t in r4*/
+    
+    //assembly has better support for multiplication
+    
+    
+    __asm__ (";t=t*3/14; t ranging 0~223                   \n"
+             "    mov a,r4                                 \n"
+             "    mov b,#14                                \n"
+             "    div ab                                   \n"
+             "    mov r5,b                                 \n"
+             "    mov b,#3                                 \n"
+             "    mul ab                                   \n"
+             "    mov r4,a                                 \n"
+             ";now r4=int(r4/14)*3                         \n"
+             ";r4=r4+reminder*3/14                         \n"
+             "    mov a,r5                                 \n"
+             "    mov b,#3                                 \n"
+             "    mul ab                                   \n"
+             "    mov b,#14                                \n"
+             "    div ab                                   \n"
+             "    add a,r4                                 \n"
+             "    mov r4,a                                 \n"
+   
+             ";m=m*48;                                     \n"
+             "    mov b, #48                               \n"
+             "    mov a, r0                                \n"
+             "    mul ab                                   \n"
+             "    mov r0, a                                \n"
+             "    mov r5, b                                \n"
+             
+             "    mov b, #48                               \n"
+             "    mov a, r1                                \n"
+             "    mul ab                                   \n"
+             "    add a, r5                                \n"
+             "    mov r1, a                                \n"
+             "    clr a                                    \n"
+             "    addc a, b                                \n"
+             "    mov r5, a                                \n"
+             
+             "    mov b, #48                               \n"
+             "    mov a, r2                                \n"
+             "    mul ab                                   \n"
+             "    add a, r5                                \n"
+             "    mov r2, a                                \n"
+             "    clr a                                    \n"
+             "    addc a, b                                \n"
+             "    mov r5, a                                \n"
+             
+             "    mov b, #48                               \n"
+             "    mov a, r3                                \n"
+             "    mul ab                                   \n"
+             "    add a, r5                                \n"
+             "    mov r3, a                                \n"
+             //5th byte not needed
+             //"    clr a                                    \n"
+             //"    addc a, b                                \n"
+             //"    mov r5, a                                \n"
+             
+             
+             ";m=m+t                                       \n"
+             "    mov r6, #0                               \n"
+             "    mov a, r4                                \n"
+             "    add a, r0                                \n"
+             "    mov r0, a                                \n"
+             "    mov a, r1                                \n"
+             "    addc a, r6                               \n"
+             "    mov r1, a                                \n"
+             "    mov a, r2                                \n"
+             "    addc a, r6                               \n"
+             "    mov r2, a                                \n"
+             "    mov a, r3                                \n"
+             "    addc a, r6                               \n"
+             "    mov r3, a                                \n"
+             //5th byte not needed
+             //"    mov a, r5                                \n"
+             //"    addc a, r6                               \n"
+             //"    mov r5, a                                \n"
+             
+             ";return                                      \n"
+
+             "    mov dpl, r0                              \n"
+             "    mov dph, r1                              \n"
+             "    mov b, r2                                \n"
+             "    mov a, r3                                \n"
+
+             );
+#elif F_CPU == 12000000
+    //12M CLK
+    
+    /*1m = 250t 1t=1us (m*250+t)
+     
+     t=(t);
+     m=m*250;
+     
+     return ( m+t );*/
+    
+    //assembly has better support for multiplication
+    
+    
+    __asm__ (
+             ";1m = 250t 1t=1us (m*250+t)    t is 0~249    \n"
+             ";we need to return m*250+t                   \n"
+             
+             ";m=m*250;                                    \n"
+             "    mov b, #250                              \n"
+             "    mov a, r0                                \n"
+             "    mul ab                                   \n"
+             "    mov r0, a                                \n"
+             "    mov r5, b                                \n"
+             
+             "    mov b, #250                              \n"
+             "    mov a, r1                                \n"
+             "    mul ab                                   \n"
+             "    add a, r5                                \n"
+             "    mov r1, a                                \n"
+             "    clr a                                    \n"
+             "    addc a, b                                \n"
+             "    mov r5, a                                \n"
+             
+             "    mov b, #250                              \n"
+             "    mov a, r2                                \n"
+             "    mul ab                                   \n"
+             "    add a, r5                                \n"
+             "    mov r2, a                                \n"
+             "    clr a                                    \n"
+             "    addc a, b                                \n"
+             "    mov r5, a                                \n"
+             
+             "    mov b, #250                              \n"
+             "    mov a, r3                                \n"
+             "    mul ab                                   \n"
+             "    add a, r5                                \n"
+             "    mov r3, a                                \n"
+             
+             ";return m+t                                  \n"
+             "    mov r5, #0                               \n"
+             "    mov a, r4                                \n"
+             "    add a, r0                                \n"
+             "    mov dpl, a                               \n"
+             "    mov a, r1                                \n"
+             "    addc a, r5                               \n"
+             "    mov dph, a                               \n"
+             "    mov a, r2                                \n"
+             "    addc a, r5                               \n"
+             "    mov b, a                                 \n"
+             "    mov a, r3                                \n"
+             "    addc a, r5                               \n"
+             
+             );
+#else
+#error "clock not supported yet"
+
+    
 #endif
     //return values: ’dpl’ 1B, ’dpl’ LSB & ’dph’ 2B,
     //’dpl’, ’dph’ and ’b’ 3B, ’dpl’,’dph’,’b’ & ’acc’ 4B
@@ -346,8 +523,7 @@ uint32_t millis()
              "    mov b, r1                                \n"
              );
              
-#else
-             //24M CLK
+#elif F_CPU == 24000000
     __asm__ (";return timer0_overflow_count>>3             \n"
              ";Or: return (timer0_overflow_count<<5)>>8    \n"
              ";Or: return (timer0_overflow_count*32)>>8    \n"
@@ -389,6 +565,151 @@ uint32_t millis()
              ";calculation finished, a already in place    \n"
              "    mov b, r1                                \n"
              );
+#elif F_CPU == 56000000
+    __asm__ (";return timer0_overflow_count*6/125          \n"
+             //mutiply by 6
+             "    mov b, #6                                \n"
+             "    mov a, r0                                \n"
+             "    mul ab                                   \n"
+             "    mov r0, a                                \n"
+             "    mov r5, b                                \n"
+             
+             "    mov b, #6                                \n"
+             "    mov a, r1                                \n"
+             "    mul ab                                   \n"
+             "    add a, r5                                \n"
+             "    mov r1, a                                \n"
+             "    clr a                                    \n"
+             "    addc a, b                                \n"
+             "    mov r5, a                                \n"
+             
+             "    mov b, #6                                \n"
+             "    mov a, r2                                \n"
+             "    mul ab                                   \n"
+             "    add a, r5                                \n"
+             "    mov r2, a                                \n"
+             "    clr a                                    \n"
+             "    addc a, b                                \n"
+             "    mov r5, a                                \n"
+             
+             "    mov b, #6                                \n"
+             "    mov a, r3                                \n"
+             "    mul ab                                   \n"
+             "    add a, r5                                \n"
+             "    mov r3, a                                \n"
+             "    clr a                                    \n"
+             "    addc a, b                                \n"
+             "    mov r5, a                                \n"
+             
+             "    mov b, #6                                \n"
+             "    mov a, r4                                \n"
+             "    mul ab                                   \n"
+             "    add a, r5                                \n"
+             "    mov r4, a                                \n"
+             "    clr a                                    \n"
+             "    addc a, b                                \n"
+             "    mov r5, a                                \n"
+             
+             //ref:MCS51 三字节无符号除法程序（ASM）modify for 6 bytes
+             "    mov r7,#125                              \n"
+             "    mov a,r5                                 \n"
+             "    mov b,r7                                 \n"
+             "    div ab                                   \n"
+             "    mov r5,b                                 \n"
+             "    mov r6,a                                 \n"
+             "    mov b,#40                                \n"
+             ";after keeping high result, iterate all B bit with left shift \n"
+             "1$: ;div125_iter_bits                        \n"
+             "    clr c                                    \n"
+             "    mov a,r0                                 \n"
+             "    rlc a                                    \n"
+             "    mov r0,a                                 \n"
+             "    mov a,r1                                 \n"
+             "    rlc a                                    \n"
+             "    mov r1,a                                 \n"
+             "    mov a,r2                                 \n"
+             "    rlc a                                    \n"
+             "    mov r2,a                                 \n"
+             "    mov a,r3                                 \n"
+             "    rlc a                                    \n"
+             "    mov r3,a                                 \n"
+             "    mov a,r4                                 \n"
+             "    rlc a                                    \n"
+             "    mov r4,a                                 \n"
+             "    mov a,r5                                 \n"
+             "    rlc a                                    \n"
+             "    mov r5,a                                 \n"
+             "    mov f0,c                                 \n"
+             "    clr c                                    \n"
+             "    subb a,r7                                \n"
+             ";get 1 for result with overflow on shift or non-negitive subb result \n"
+             "    jb f0,2$                                 \n"
+             "    jc 3$    ;get 0 for this bit             \n"
+             "2$: ;shift overflow                          \n"
+             "    mov r5,a                                 \n"
+             "    inc r0                                   \n"
+             "3$: ;iternate next bit                       \n"
+             "    djnz b,1$                                \n"
+             "    mov a,r6                                 \n"
+             "    clr ov                                   \n"
+             "    jz 4$                                    \n"
+             "    setb ov                                  \n"
+             "4$: ;finish calculation, set high byte and reminder \n"
+             "    xch a,r5                                 \n"
+             "    mov r7,a                                 \n"
+             
+             ";return                                      \n"
+             "    mov dpl, r0                              \n"
+             "    mov dph, r1                              \n"
+             "    mov b, r2                                \n"
+             "    mov a, r3                                \n"
+
+             );
+#elif F_CPU == 12000000
+    __asm__ (";return timer0_overflow_count>>2             \n"
+             ";Or: return (timer0_overflow_count<<6)>>8    \n"
+             ";Or: return (timer0_overflow_count*64)>>8    \n"
+             "    mov b, #64                               \n"
+             "    mov a, r0                                \n"
+             "    mul ab                                   \n"
+             "    mov r0, b                                \n"
+             ";lowest 8 bit not used (a), r0 free to use   \n"
+             "    mov b, #64                               \n"
+             "    mov a, r1                                \n"
+             "    mul ab                                   \n"
+             "    add a, r0                                \n"
+             ";carry won't be set, if I calculated right   \n"
+             "    mov dpl, a                               \n"
+             "    mov r0, b                                \n"
+             
+             "    mov b, #64                               \n"
+             "    mov a, r2                                \n"
+             "    mul ab                                   \n"
+             "    add a, r0                                \n"
+             ";carry won't be set, if I calculated right   \n"
+             "    mov dph, a                               \n"
+             "    mov r0, b                                \n"
+             
+             "    mov b, #64                               \n"
+             "    mov a, r3                                \n"
+             "    mul ab                                   \n"
+             "    add a, r0                                \n"
+             ";carry won't be set, if I calculated right   \n"
+             "    mov r1, a                                \n"
+             "    mov r0, b                                \n"
+             
+             "    mov b, #64                               \n"
+             "    mov a, r4                                \n"
+             "    mul ab                                   \n"
+             "    add a, r0                                \n"
+             ";carry won't be set, if I calculated right   \n"
+             
+             ";calculation finished, a already in place    \n"
+             "    mov b, r1                                \n"
+             );
+#else
+    #error "clock not supported yet"
+
 #endif
 }
 
@@ -406,65 +727,205 @@ void delay(uint32_t ms)
 }
 
 void delayMicroseconds(uint16_t us){
-#ifdef    F_CPU
-#if        F_CPU <= 6000000
-    us >>= 2;
-#endif
-#if        F_CPU <= 3000000
-    us >>= 2;
-#endif
-#if        F_CPU <= 750000
-    us >>= 4;
-#endif
+    // call with const, "mov dptr, #CONST" and "lcall", 3 + (6 or 7) cycles, depending on even or odd address
+    // call with var, "mov dpl, r", "mov dph, r", and "lcall", 2 + 2 + (6 or 7) cycles, depending on odd or even address
+    // The compiler by default uses a caller saves convention for register saving across function calls
+    us;  //avoid unreferenced function argument warning
+#if  F_CPU >= 56000000UL
+    __asm__ (".even                                    \n"
+             "    mov  r6, dpl                         \n" //low 8-bit
+             "    mov  r7, dph                         \n" //high 8-bit
+             "    clr  c                               \n"
+             "    mov  a,#0x00                         \n"
+             "    subb a, r6                           \n"
+             "    clr  a                               \n"
+             "    subb a, r7                           \n"
+             "    jc skip_0us$                         \n"
+             "    ret                                  \n" //return if 0 us  about 0.48us total
+             "    nop                                  \n"
+             "skip_0us$:                               \n"
+             "    clr  c                               \n" //do some loop init, not useful for 1us but better here
+             "    mov  a, #0x01                        \n"
+             "    subb a, r6                           \n"
+             "    mov  r6, a                           \n"
+             "    mov  a, #0x00                        \n"
+             "    subb a, r7                           \n"
+             "    mov  r7, a                           \n"
+             
+             "    nop                                  \n" //keep even
+             "    nop \n nop \n nop \n nop \n nop \n     "
+             "    nop \n nop \n nop \n nop \n nop \n     "
+             "    cjne r6,#0x00,loop56m_us$            \n"
+             "    cjne r7,#0x00,loop56m_us$            \n"
+             "    nop \n                                 "
+             "    ret                                  \n" //return if 1us  about 1 us total
+             
+             "loop56m_us$:                             \n" //about nus
+             "    nop                                  \n" //6 cycle
+             "    nop \n nop \n nop \n nop \n nop \n     "
+             "loop56m_us_2$:                           \n"
+             
+             "    mov r5, #7                           \n" //2 cycle
+             "loop_rep_nop$:                           \n"
+             "    djnz r5, loop_rep_nop$               \n" //6*6+2 = 38 cycle
+             "    nop \n nop \n nop \n                   " //3 cycle
+             "    inc  r6                              \n" // 1 cycle
+             "    cjne r6, #0,loop56m_us$              \n" // 6 cycle
+             "    inc  r7                              \n" // there will be extra 1 cycles for every 256us
+             "    cjne r7, #0,loop56m_us_2$            \n"
+             );
+#elif F_CPU >= 24000000UL
+    __asm__ (".even                                    \n"
+             "    mov  r6, dpl                         \n" //low 8-bit
+             "    mov  r7, dph                         \n" //high 8-bit
+             "    clr  c                               \n"
+             "    mov  a,#0x01                         \n"
+             "    subb a, r6                           \n"
+             "    clr  a                               \n"
+             "    subb a, r7                           \n"
+             "    jc skip_0us$                         \n"
+             "    ret                                  \n" //return if 0 1 us  about 1.2us total
+             "    nop                                  \n"
+             "skip_0us$:                               \n"
+             "    clr  c                               \n" //do some loop init, not useful for 2us but better here
+             "    mov  a, #0x02                        \n"
+             "    subb a, r6                           \n"
+             "    mov  r6, a                           \n"
+             "    mov  a, #0x00                        \n"
+             "    subb a, r7                           \n"
+             "    mov  r7, a                           \n"
+             
+             "    nop                                  \n" //keep even
+             "    cjne r6,#0x00,loop24m_us$            \n"
+             "    cjne r7,#0x00,loop24m_us$            \n"
+             "    nop                                  \n"
+             "    ret                                  \n" //return if 2us  about 2 us total
+             
+             "loop24m_us$:                             \n" //about nus
+             
+             "    nop \n nop \n nop \n nop \n nop \n    " // 6+11 cycle
+             "    nop \n "
+             "loop24m_us_2$:                          \n"  //need more test
+             
+             "    nop \n nop \n nop \n nop \n nop \n    "
+             "    nop \n nop \n nop \n nop \n nop \n    "
+             "    nop \n                                "
+             
+             "    inc  r6                              \n" // 1 cycle
+             "    cjne r6, #0,loop24m_us$              \n" // 6 cycle
+             "    inc  r7                              \n" // there will be extra 1 cycles for every 256us
+             "    cjne r7, #0,loop24m_us_2$            \n"
+             "    nop                                  \n"
+             );
+#elif F_CPU >= 16000000UL
+    __asm__ (".even                                    \n"
+             "    mov  r6, dpl                         \n" //low 8-bit
+             "    mov  r7, dph                         \n" //high 8-bit
+             "    clr  c                               \n"
+             "    mov  a,#0x01                         \n"
+             "    subb a, r6                           \n"
+             "    clr  a                               \n"
+             "    subb a, r7                           \n"
+             "    jc skip_0us$                         \n"
+             "    ret                                  \n" //return if 0 1 us  about 1.7us total
+             "    nop                                  \n"
+             "skip_0us$:                               \n"
+             "    cjne r7,#0x00,skip_2us$              \n"
+             "    cjne r6,#0x02,skip_2us$              \n"
+             "    ret                                  \n" //return if 2us  about 2.3us total
+             "    nop                                  \n" //keep even
+             "skip_2us$:                               \n"
+             
+             "    clr  c                               \n" //do some loop init, not useful for 3us but better here
+             "    mov  a, #0x03                        \n"
+             "    subb a, r6                           \n"
+             "    mov  r6, a                           \n"
+             "    mov  a, #0x00                        \n"
+             "    subb a, r7                           \n"
+             "    mov  r7, a                           \n"
+             
+             "    cjne r6,#0x00,loop16m_us$            \n"
+             "    cjne r7,#0x00,loop16m_us$            \n"
+             "    ret                                  \n" //return if 3us  about 3.4 us total
+             
+             "loop16m_us$:                             \n" //about n.5us
+             
+             "    nop \n nop \n nop \n nop \n nop \n    " // 6+3 cycle
+             "    nop \n                                "
+             "loop16m_us_2$:                          \n"
+             "    nop \n nop \n nop \n                  "
+             
+             "    inc  r6                              \n" // 1 cycle
+             "    cjne r6, #0,loop16m_us$              \n" // 6 cycle
+             "    inc  r7                              \n" // there will be extra 1 cycles for every 256us
+             "    cjne r7, #0,loop16m_us_2$            \n"
+             );
+#elif F_CPU >= 12000000UL
+    __asm__ (".even                                    \n"
+             "    mov  r6, dpl                         \n" //low 8-bit
+             "    mov  r7, dph                         \n" //high 8-bit
+             "    clr  c                               \n"
+             "    mov  a,#0x02                         \n"
+             "    subb a, r6                           \n"
+             "    clr  a                               \n"
+             "    subb a, r7                           \n"
+             "    jc skip_0us$                         \n"
+             "    ret                                  \n" //return if 0 1 2 us  about 2.25us total
+             "    nop                                  \n"
+             "skip_0us$:                               \n"
+             "    clr  c                               \n" //do some loop init, not useful for 3us but better here
+             "    mov  a, #0x03                        \n"
+             "    subb a, r6                           \n"
+             "    mov  r6, a                           \n"
+             "    mov  a, #0x00                        \n"
+             "    subb a, r7                           \n"
+             "    mov  r7, a                           \n"
+             
+             "    nop                                  \n" //keep even
+             "    cjne r6,#0x00,loop12m_us$            \n"
+             "    cjne r7,#0x00,loop12m_us$            \n"
+             "    nop                                  \n"
+             "    ret                                  \n" //return if 3us  about 2 us total
+             
+             "loop12m_us$:                             \n" //about nus
+             
+             "    nop \n nop \n nop \n nop \n nop \n    " //
+             "    nop \n "
+             "loop12m_us_2$:                          \n"  //need more test
+             "    inc  r6                              \n" // 1 cycle
+             "    cjne r6, #0,loop12m_us$              \n" // 6 cycle
+             "    inc  r7                              \n" // there will be extra 1 cycles for every 256us
+             "    cjne r7, #0,loop12m_us_2$            \n"
+             "    nop                                  \n"
+             );
+#else
+#error "clock not supported yet"
+    
 #endif
     
-    // in arduino setup, the code above seems useless (clock generally much higher than 6M).
-    
-    while ( us ) {  // total = 12~13 Fsys cycles, 1uS @Fsys=12MHz
-//        ++ SAFE_MOD;  // 2 Fsys cycles, for higher Fsys, add operation here
-
-#ifdef    F_CPU
-#if        F_CPU >= 14000000
-//        ++ SAFE_MOD;
-#endif
-#if        F_CPU >= 16000000
-//        ++ SAFE_MOD;  //seems SDCC is not very efficent, dirty tweak for a little more accuracy, but still not very accurate. accurate time need carefull planning and word alignment. Maybe for later.
-#endif
-#if        F_CPU >= 18000000
-        ++ SAFE_MOD;
-#endif
-#if        F_CPU >= 20000000
-        ++ SAFE_MOD;
-#endif
-#if        F_CPU >= 22000000
-        ++ SAFE_MOD;
-#endif
-#if        F_CPU >= 24000000
-        ++ SAFE_MOD;
-#endif
-#if        F_CPU >= 26000000
-        ++ SAFE_MOD;
-#endif
-#if        F_CPU >= 28000000
-        ++ SAFE_MOD;
-#endif
-#if        F_CPU >= 30000000
-        ++ SAFE_MOD;
-#endif
-#if        F_CPU >= 32000000
-        ++ SAFE_MOD;
-#endif
-#endif
-        -- us;
-    }
+    // return takes 5~6 cycles, depending on even or odd address
 }
 
 void init()
 {
+    
+#if F_EXT_OSC > 0
+    //switch to external OSC
+    SAFE_MOD = 0x55;
+    SAFE_MOD = 0xAA;
+    CLOCK_CFG |= bOSC_EN_XT;
+    delayMicroseconds(10000);
+    SAFE_MOD = 0x55;
+    SAFE_MOD = 0xAA;
+    CLOCK_CFG &= ~bOSC_EN_INT;
+    SAFE_MOD = 0x00;
+#endif
+    
     //set internal clock 
     SAFE_MOD = 0x55;
     SAFE_MOD = 0xAA;
     
+#if defined(CH551) || defined(CH552)
 #if F_CPU == 32000000
     CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x07;  // 32MHz
 #elif F_CPU == 24000000
@@ -480,9 +941,44 @@ void init()
 #elif F_CPU == 750000
     CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x01;  // 750KHz
 #elif F_CPU == 187500
-    CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x00;  // 187.5MHz
+    CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x00;  // 187.5KHz
 #else
 #warning F_CPU invalid or not set
+#endif
+
+#elif defined(CH549)
+#if F_CPU == 48000000
+    CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x07;  // 48MHz
+#elif F_CPU == 32000000
+    CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x06;  // 32MHz
+#elif F_CPU == 24000000
+    CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x05;  // 24MHz
+#elif F_CPU == 16000000
+    CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x04;  // 16MHz
+#elif F_CPU == 12000000
+    CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x03;  // 12MHz
+#elif F_CPU == 3000000
+    CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x02;  // 3MHz
+#elif F_CPU == 750000
+    CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x01;  // 750KHz
+#elif F_CPU == 187500
+    CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x00;  // 187.5KHz
+#else
+#warning F_CPU invalid or not set
+#endif
+    
+#elif defined(CH559)
+#if F_CPU == 24000000
+    CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_DIV | 12;  // 24MHz, 12M*(24 default PLL)/12=24M
+#elif F_CPU == 16000000
+    CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_DIV | 18;  // 16MHz
+#elif F_CPU == 56000000
+    PLL_CFG = (7<<5) | (28);    //Fusb4x = 12M*(28 PLL)/7=48M
+    CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_DIV | 6;  // 56MHz, 12M*(28 PLL)/6=56M
+#else
+#warning F_CPU invalid or not set
+#endif
+    
 #endif
     
     SAFE_MOD = 0x00;
@@ -506,7 +1002,7 @@ void init()
     //init T0 for millis
     TMOD = (TMOD & ~0x0F)|(bT0_M1);//mode 2 for autoreload
     T2MOD = T2MOD & ~bT0_CLK;    //bT0_CLK=0;clk Div by 12
-    TH0 = 255-250+1;
+    TH0 = 255-T0_CYCLE+1;
     TF0 = 0;
     ET0 = 1;
     TR0 = 1;

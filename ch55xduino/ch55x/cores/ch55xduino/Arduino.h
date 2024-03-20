@@ -30,8 +30,8 @@
 //#include <avr/pgmspace.h>
 //#include <avr/io.h>
 //#include <avr/interrupt.h>
-#include "include/ch554.h"
-#include "include/ch554_usb.h"
+#include "include/ch5xx.h"
+#include "include/ch5xx_usb.h"
 #include "pins_arduino_include.h"
 //Macro-based digital IO fucntions
 #include "wiring_digital_fast.h"
@@ -121,8 +121,8 @@ void yield(void);
 #define degrees(rad) ((rad)*RAD_TO_DEG)
 #define sq(x) ((x)*(x))
 
-#define interrupts() sei()
-#define noInterrupts() cli()
+#define interrupts() (EA=1)
+#define noInterrupts() (EA=0)
 
 #define clockCyclesPerMicrosecond() ( F_CPU / 1000000L )
 #define clockCyclesPerMillisecond() ( F_CPU / 1000L )
@@ -169,7 +169,11 @@ void init(void);
 void pinMode(uint8_t pin, __xdata uint8_t mode);
 void digitalWrite(uint8_t pin, __xdata uint8_t val);
 uint8_t digitalRead(uint8_t pin);
+#if defined(CH559)
+uint16_t analogRead(uint8_t pin);
+#else
 uint8_t analogRead(uint8_t pin);
+#endif
 void analogWrite(uint8_t pin, __xdata uint16_t val);
 
 uint32_t millis(void);
@@ -254,6 +258,8 @@ uint8_t USBSerial_available();
 char USBSerial_read();
 #include "Print.h"
 
+// Generic selection for print
+#include "genericPrintSelection.h"
 
 // not quite understans X marco in sduino, use a lot define for now
 
@@ -261,18 +267,18 @@ char USBSerial_read();
 #define USBSerial_print_sn(P,Q) ( Print_print_sn(USBSerial_write,(P),(Q)) )
 #define USBSerial_print_i(P) ( Print_print_i(USBSerial_write,(P)) )
 #define USBSerial_print_u(P) ( Print_print_u(USBSerial_write,(P)) )
-#define USBSerial_print_ib(P) ( Print_print_ib(USBSerial_write,(P)) )
+#define USBSerial_print_ib(P,Q) ( Print_print_ib(USBSerial_write,(P),(Q)) )
 #define USBSerial_print_ub(P,Q) ( Print_print_ub(USBSerial_write,(P),(Q)) )
 #define USBSerial_print_f(P) ( Print_print_f(USBSerial_write,(P)) )
 #define USBSerial_print_fd(P,Q) ( Print_print_fd(USBSerial_write,(P),(Q)) )
 #define USBSerial_print_c(P) ( (USBSerial_write(P)) )
 
-#define USBSerial_println() ( Print_println(USBSerial_write) )
+#define USBSerial_println_only() ( Print_println(USBSerial_write) )
 #define USBSerial_println_s(P) ( Print_print_s(USBSerial_write,(P)) + Print_println(USBSerial_write) )
 #define USBSerial_println_sn(P,Q) ( Print_print_sn(USBSerial_write,(P),(Q)) + Print_println(USBSerial_write) )
 #define USBSerial_println_i(P) ( Print_print_i(USBSerial_write,(P)) + Print_println(USBSerial_write) )
 #define USBSerial_println_u(P) ( Print_print_u(USBSerial_write,(P)) + Print_println(USBSerial_write) )
-#define USBSerial_println_ib(P) ( Print_print_ib(USBSerial_write,(P)) + Print_println(USBSerial_write) )
+#define USBSerial_println_ib(P,Q) ( Print_print_ib(USBSerial_write,(P),(Q)) + Print_println(USBSerial_write) )
 #define USBSerial_println_ub(P,Q) ( Print_print_ub(USBSerial_write,(P),(Q)) + Print_println(USBSerial_write) )
 #define USBSerial_println_f(P) ( Print_print_f(USBSerial_write,(P)) + Print_println(USBSerial_write) )
 #define USBSerial_println_fd(P,Q) ( Print_print_fd(USBSerial_write,(P),(Q) ) + Print_println(USBSerial_write) )
@@ -283,22 +289,44 @@ char USBSerial_read();
 #define Serial0_print_sn(P,Q) ( Print_print_sn(Serial0_write,(P),(Q)) )
 #define Serial0_print_i(P) ( Print_print_i(Serial0_write,(P)) )
 #define Serial0_print_u(P) ( Print_print_u(Serial0_write,(P)) )
-#define Serial0_print_ib(P) ( Print_print_ib(Serial0_write,(P)) )
+#define Serial0_print_ib(P,Q) ( Print_print_ib(Serial0_write,(P),(Q)) )
 #define Serial0_print_ub(P,Q) ( Print_print_ub(Serial0_write,(P),(Q)) )
 #define Serial0_print_f(P) ( Print_print_f(Serial0_write,(P)) )
 #define Serial0_print_fd(P,Q) ( Print_print_fd(Serial0_write,(P),(Q)) )
 #define Serial0_print_c(P) ( (Serial0_write(P)) )
 
-#define Serial0_println() ( Print_println(Serial0_write) )
+#define Serial0_println_only() ( Print_println(Serial0_write) )
 #define Serial0_println_s(P) ( Print_print_s(Serial0_write,(P)) + Print_println(Serial0_write) )
 #define Serial0_println_sn(P,Q) ( Print_print_sn(Serial0_write,(P),(Q)) + Print_println(Serial0_write) )
 #define Serial0_println_i(P) ( Print_print_i(Serial0_write,(P)) + Print_println(Serial0_write) )
 #define Serial0_println_u(P) ( Print_print_u(Serial0_write,(P)) + Print_println(Serial0_write) )
-#define Serial0_println_ib(P) ( Print_print_ib(Serial0_write,(P)) + Print_println(Serial0_write) )
+#define Serial0_println_ib(P,Q) ( Print_print_ib(Serial0_write,(P),(Q)) + Print_println(Serial0_write) )
 #define Serial0_println_ub(P,Q) ( Print_print_ub(Serial0_write,(P),(Q)) + Print_println(Serial0_write) )
 #define Serial0_println_f(P) ( Print_print_f(Serial0_write,(P)) + Print_println(Serial0_write) )
 #define Serial0_println_fd(P,Q) ( Print_print_fd(Serial0_write,(P),(Q) ) + Print_println(Serial0_write) )
 #define Serial0_println_c(P) ( (Serial0_write(P)) + Print_println(Serial0_write) )
+
+
+#define Serial1_print_s(P) ( Print_print_s(Serial1_write,(P)) )
+#define Serial1_print_sn(P,Q) ( Print_print_sn(Serial1_write,(P),(Q)) )
+#define Serial1_print_i(P) ( Print_print_i(Serial1_write,(P)) )
+#define Serial1_print_u(P) ( Print_print_u(Serial1_write,(P)) )
+#define Serial1_print_ib(P,Q) ( Print_print_ib(Serial1_write,(P),(Q)) )
+#define Serial1_print_ub(P,Q) ( Print_print_ub(Serial1_write,(P),(Q)) )
+#define Serial1_print_f(P) ( Print_print_f(Serial1_write,(P)) )
+#define Serial1_print_fd(P,Q) ( Print_print_fd(Serial1_write,(P),(Q)) )
+#define Serial1_print_c(P) ( (Serial1_write(P)) )
+
+#define Serial1_println_only() ( Print_println(Serial1_write) )
+#define Serial1_println_s(P) ( Print_print_s(Serial1_write,(P)) + Print_println(Serial1_write) )
+#define Serial1_println_sn(P,Q) ( Print_print_sn(Serial1_write,(P),(Q)) + Print_println(Serial1_write) )
+#define Serial1_println_i(P) ( Print_print_i(Serial1_write,(P)) + Print_println(Serial1_write) )
+#define Serial1_println_u(P) ( Print_print_u(Serial1_write,(P)) + Print_println(Serial1_write) )
+#define Serial1_println_ib(P,Q) ( Print_print_ib(Serial1_write,(P),(Q)) + Print_println(Serial1_write) )
+#define Serial1_println_ub(P,Q) ( Print_print_ub(Serial1_write,(P),(Q)) + Print_println(Serial1_write) )
+#define Serial1_println_f(P) ( Print_print_f(Serial1_write,(P)) + Print_println(Serial1_write) )
+#define Serial1_println_fd(P,Q) ( Print_print_fd(Serial1_write,(P),(Q) ) + Print_println(Serial1_write) )
+#define Serial1_println_c(P) ( (Serial1_write(P)) + Print_println(Serial1_write) )
 
 //10K lifecycle DataFlash access on CH551/CH552.
 #define eeprom_write_byte(ADDR,VAL) { DPL=(VAL);DPH=(ADDR);eeprom_write_byte_2_params_DPTR(); }

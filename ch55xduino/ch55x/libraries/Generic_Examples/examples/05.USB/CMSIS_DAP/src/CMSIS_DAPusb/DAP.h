@@ -28,7 +28,7 @@
 #ifndef __DAP_H__
 #define __DAP_H__
 
-#include "include/ch554.h"
+#include "include/ch5xx.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>

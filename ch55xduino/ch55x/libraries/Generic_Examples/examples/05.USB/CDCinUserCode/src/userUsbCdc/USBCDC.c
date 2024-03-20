@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include "include/ch554.h"
-#include "include/ch554_usb.h"
+#include "include/ch5xx.h"
+#include "include/ch5xx_usb.h"
 #include "USBconstant.h"
 #include "USBhandler.h"
 
@@ -65,6 +65,7 @@ void setControlLineStateHandler(){
         pTaskFn tasksArr[1];
         USB_CTRL = 0;
         EA = 0;                                                                    //Disabling all interrupts is required.
+        TMOD = 0;
         tasksArr[0] = (pTaskFn)0x3800;
         delayMicroseconds(50000);
         delayMicroseconds(50000);
