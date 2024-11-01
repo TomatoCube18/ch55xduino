@@ -34,8 +34,8 @@
                     ],
                     "url": "https://github.com/TomatoCube18/ch55xduino/releases/download/0.2.0_TC/ch55xduino_tc-core-0.2.0.tar.bz2",
                     "archiveFileName": "ch55xduino_tc-core-0.2.0.tar.bz2",
-                    "checksum": "SHA-256:cc559f38c2cacbfbc38ce988623fc24c3f9ae8119186984d3fd478bb5360d273",
-                    "size": "496668"
+                    "checksum": "SHA-256:465d82914bbaeefb8d6cd8bddc0cb3cfe5fbf71c77c01cb0c57c3929782df10a",
+                    "size": "530462"
                 },{
                     "name": "TomatoCube branch of CH55xDuino MCS51 plain C core (non-C++)",
                     "architecture": "mcs51",
