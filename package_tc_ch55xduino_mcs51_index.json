@@ -24,12 +24,12 @@
                         {
                             "name": "MCS51Tools",
                             "version": "2023.10.10",
-                            "packager": "CH55xDuino"
+                            "packager": "TomatoCubeCH552"
                         },
                         {
                             "name": "sdcc",
                             "version": "build.13407_4",
-                            "packager": "CH55xDuino"
+                            "packager": "TomatoCubeCH552"
                         }
                     ],
                     "url": "https://github.com/TomatoCube18/ch55xduino/releases/download/0.2.0_TC/ch55xduino_tc-core-0.2.1.tar.bz2",
@@ -51,12 +51,12 @@
                         {
                             "name": "MCS51Tools",
                             "version": "2023.10.10",
-                            "packager": "CH55xDuino"
+                            "packager": "TomatoCubeCH552"
                         },
                         {
                             "name": "sdcc",
                             "version": "build.13407_4",
-                            "packager": "CH55xDuino"
+                            "packager": "TomatoCubeCH552"
                         }
                     ],
                     "url": "https://github.com/TomatoCube18/ch55xduino/releases/download/0.2.0_TC/ch55xduino_tc-core-0.2.0.tar.bz2",
